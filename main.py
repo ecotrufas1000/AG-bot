@@ -4,41 +4,40 @@ import json
 import os
 import datetime
 import math
-import google.generativeai as genai  # <--- IMPORTANTE: Faltaba esto
+import google.generativeai as genai
 from telebot import types
 from dotenv import load_dotenv
+from supabase import create_client
 
-# 1. Cargar variables de entorno
+# 1. Cargar variables
 load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-ADMIN_ID = "6906652917" 
-WEATHER_KEY = os.getenv("WEATHER_KEY") # Asegurate que se llame así en Render
+ADMIN_ID = "6906652917"
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-# 2. Configurar Google AI (PRIMERO configurar, DESPUÉS crear modelo)
-# Reemplazá la parte de configuración por esta:
+# 2. Configurar IA y Diagnóstico (Sin errores de espacios)
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
     try:
-    print("--- DIAGNÓSTICO DE MODELOS ---")
-    for m in genai.list_models():
-        if 'generateContent' in m.supported_generation_methods:
-            print(f"Modelo detectado: {m.name}")
-except Exception as e:
-    print(f"FALLO CRÍTICO DE CONEXIÓN: {e}")
-    # Usamos el nombre técnico completo
-    model_ia = genai.GenerativeModel(model_name="models/gemini-1.5-flash")
-# 3. Configurar el Bot de Telegram
-TOKEN = os.getenv("TELEGRAM_TOKEN")
-bot = telebot.TeleBot(TOKEN)
-
-# 4. Función de reportes
-def reportar_error_al_admin(error_msg, context="General"):
-    mensaje_tecnico = f"🚨 *LOG DE ERROR*\n📍 *Contexto:* {context}\n📝 *Detalle:* `{error_msg}`"
-    print(mensaje_tecnico)
-    try:
-        bot.send_message(ADMIN_ID, mensaje_tecnico, parse_mode="Markdown")
+        print("--- DIAGNÓSTICO DE MODELOS ---")
+        # Listamos modelos para ver qué ve tu llave
+        for m in genai.list_models():
+            if 'generateContent' in m.supported_generation_methods:
+                print(f"Modelo detectado: {m.name}")
     except Exception as e:
-        print(f"No se pudo enviar error al admin: {e}")
+        print(f"Error en diagnóstico: {e}")
+    
+    model_ia = genai.GenerativeModel('gemini-1.5-flash')
+else:
+    print("❌ ERROR: No se encontró GEMINI_API_KEY")
+
+# 3. Conexión segura con Supabase
+try:
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    print("✅ Conexión con Supabase establecida.")
+except Exception as e:
+    print(f"❌ Error Supabase: {e}")
 # CONFIGURACIÓN
 # ======================================================
 load_dotenv()
@@ -518,6 +517,7 @@ if __name__ == "__main__":
     Thread(target=run).start() # Inicia el servidor web en segundo plano
     print("🤖 AgroGuardian Lab Iniciado.")
     bot.infinity_polling()
+
 
 
 
