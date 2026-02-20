@@ -553,27 +553,28 @@ app = Flask(__name__)
 def health():
     return "Bot Agrónomo Online", 200
 
-# --- ESTA FUNCIÓN ES LA CLAVE ---
-def start_bot():
-    print("🚀 INTENTANDO CONECTAR A TELEGRAM...")
-    try:
-        bot.remove_webhook()
-        print("✅ BOT ESCUCHANDO MENSAJES...")
-        bot.infinity_polling(timeout=20, long_polling_timeout=10)
-    except Exception as e:
-        print(f"❌ Error en el bot: {e}")
+# Esta función es la que corre el servidor en segundo plano
+def run_flask():
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
 
 if __name__ == "__main__":
-    print("🎬 INICIANDO SISTEMA...")
+    # 1. Iniciamos Flask en un hilo para que no moleste
+    t = threading.Thread(target=run_flask)
+    t.daemon = True
+    t.start()
     
-    # Lanzamos el bot en un hilo ANTES que Flask
-    bot_thread = threading.Thread(target=start_bot)
-    bot_thread.start()
+    # 2. Mensajes para confirmar que llegamos acá
+    print("🎬 SISTEMA ARRANCANDO...")
+    print("🚀 BOT CONECTANDO A TELEGRAM...")
     
-    # Iniciamos Flask (esto es lo que Render monitorea)
-    print("🌐 Iniciando Servidor Web...")
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    # 3. EL BOT (esto tiene que ser lo último)
+    try:
+        bot.remove_webhook()
+        bot.infinity_polling(timeout=20, long_polling_timeout=10)
+    except Exception as e:
+        print(f"❌ ERROR: {e}")
+
 
 
 
