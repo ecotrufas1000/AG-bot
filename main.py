@@ -557,21 +557,19 @@ def run_flask():
     app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
 
 if __name__ == "__main__":
-    # 1. Iniciamos Flask en un hilo para que no moleste
     t = threading.Thread(target=run_flask)
     t.daemon = True
     t.start()
-    
-    # 2. Mensajes para confirmar que llegamos acá
+
     print("🎬 SISTEMA ARRANCANDO...")
     print("🚀 BOT CONECTANDO A TELEGRAM...")
-    
-    # 3. EL BOT (esto tiene que ser lo último)
+
     try:
         bot.remove_webhook()
         bot.infinity_polling(timeout=20, long_polling_timeout=10)
     except Exception as e:
         print(f"❌ ERROR: {e}")
+
 
 
 
