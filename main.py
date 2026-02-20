@@ -4,26 +4,37 @@ import json
 import os
 import datetime
 import math
+import google.generativeai as genai  # <--- IMPORTANTE: Faltaba esto
 from telebot import types
 from dotenv import load_dotenv
-# Cambiá esto en la parte superior de tu código
-model = genai.GenerativeModel('models/gemini-1.5-flash-latest')
-# O probá con el más nuevo si el anterior falla: "gemini-2.0-flash"
 
-genai.configure(api_key=GEMINI_API_KEY)
-model_ia = genai.GenerativeModel(MODEL_VISION)
-# Reemplaza esto con tu ID de Telegram real (lo podés sacar con @userinfobot)
+# 1. Cargar variables de entorno
+load_dotenv()
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 ADMIN_ID = "6906652917" 
+WEATHER_KEY = os.getenv("WEATHER_KEY") # Asegurate que se llame así en Render
 
+# 2. Configurar Google AI (PRIMERO configurar, DESPUÉS crear modelo)
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+    # Definimos el nombre del modelo en una variable para no repetir
+    MODEL_VISION = 'gemini-1.5-flash' 
+    model_ia = genai.GenerativeModel(MODEL_VISION)
+else:
+    print("❌ ERROR: No se encontró GEMINI_API_KEY")
+
+# 3. Configurar el Bot de Telegram
+TOKEN = os.getenv("TELEGRAM_TOKEN")
+bot = telebot.TeleBot(TOKEN)
+
+# 4. Función de reportes
 def reportar_error_al_admin(error_msg, context="General"):
-    """Envía el error técnico al administrador y lo imprime en consola."""
     mensaje_tecnico = f"🚨 *LOG DE ERROR*\n📍 *Contexto:* {context}\n📝 *Detalle:* `{error_msg}`"
-    print(mensaje_tecnico) # Esto sale en Render
+    print(mensaje_tecnico)
     try:
         bot.send_message(ADMIN_ID, mensaje_tecnico, parse_mode="Markdown")
-    except:
-        pass # Si falla el envío al admin, que no se rompa el bot
-# ======================================================
+    except Exception as e:
+        print(f"No se pudo enviar error al admin: {e}")
 # CONFIGURACIÓN
 # ======================================================
 load_dotenv()
@@ -503,6 +514,7 @@ if __name__ == "__main__":
     Thread(target=run).start() # Inicia el servidor web en segundo plano
     print("🤖 AgroGuardian Lab Iniciado.")
     bot.infinity_polling()
+
 
 
 
