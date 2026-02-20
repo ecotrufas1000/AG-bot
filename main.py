@@ -329,7 +329,7 @@ def guardar_cultivo(message):
 # FOTO IA (VISIÓN)
 # ======================================================
 def pedir_foto(message):
-    msg = bot.send_message(message.chat.id, "📸 Enviá la foto del cultivo:")
+    msg = bot.send_message(message.chat.id, "📸 Adjuntá la foto del cultivo:")
     bot.register_next_step_handler(msg, analizar_foto)
 
 def analizar_foto(message):
@@ -339,37 +339,39 @@ def analizar_foto(message):
 
         bot.send_message(message.chat.id, "🧠 *LABORATORIO IA:* Analizando muestra...")
 
-        # 1. Descargamos la foto
+        # Descarga de la foto
         file_info = bot.get_file(message.photo[-1].file_id)
-        downloaded_file = bot.download_file(file_info.path) # Nota: algunos usan .path, otros .file_path
+        downloaded_file = bot.download_file(file_info.file_path)
 
-        # 2. Preparamos el formato de imagen para la API
-        image_data = [{"mime_type": "image/jpeg", "data": downloaded_file}]
-        prompt = "Actúa como un ingeniero agrónomo. Analiza la foto y detecta plagas o enfermedades. Sé breve."
+        # Preparamos la imagen
+        image_parts = [{"mime_type": "image/jpeg", "data": downloaded_file}]
+        prompt = "Analiza esta imagen como un agrónomo experto y detecta plagas o enfermedades. Sé breve."
 
-        # 3. LLAMADA DIRECTA (Probamos con gemini-1.5-flash)
-        # Si sigue dando 404, cambia 'gemini-1.5-flash' por 'models/gemini-1.5-flash'
-        model = genai.GenerativeModel(model_name='gemini-1.5-flash')
-        
-        response = model.generate_content([prompt, image_data[0]])
+        # INTENTO 1: Nombre estándar
+        try:
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            response = model.generate_content([prompt, image_parts[0]])
+        except Exception as e1:
+            if "404" in str(e1):
+                # INTENTO 2: Nombre con prefijo (si el 1 falló)
+                print("Reintentando con prefijo models/...")
+                model = genai.GenerativeModel('models/gemini-1.5-flash')
+                response = model.generate_content([prompt, image_parts[0]])
+            else:
+                raise e1
 
         if response.text:
             bot.send_message(message.chat.id, f"🔬 *REPORTE IA:*\n{response.text}", parse_mode="Markdown")
         else:
-            bot.send_message(message.chat.id, "⚠️ El análisis no arrojó resultados.")
+            bot.send_message(message.chat.id, "⚠️ No se pudo generar un análisis.")
 
     except Exception as e:
-        error_str = str(e)
-        # Si detectamos que el error es por el nombre del modelo, intentamos el nombre alternativo
-        if "404" in error_str:
-            bot.send_message(message.chat.id, "🛰️ Ajustando frecuencia del satélite IA... Reintentá la foto.")
-            reportar_error_al_admin(f"Error 404: Probá cambiando el nombre del modelo a 'models/gemini-1.5-flash-latest'", "IA FOTO")
-        else:
-            bot.send_message(message.chat.id, "⚠️ Error en motor IA.")
-            reportar_error_al_admin(error_str, "IA FOTO CRÍTICO")
+        error_msg = str(e)
+        bot.send_message(message.chat.id, "⚠️ El motor IA está fuera de línea momentáneamente.")
+        # Esto te llegará a vos para que veamos el nombre real del error
+        reportar_error_al_admin(error_msg, "IA FOTO FINAL")
     
-    menu_principal_profesional(message.chat.id)
-# ---------------- ANOTAR Y BITÁCORA ----------------
+    menu_principal_profesional(message.chat.id)# ---------------- ANOTAR Y BITÁCORA ----------------
 def anotar_novedad(message):
     msg = bot.send_message(message.chat.id, "✍️ Describí la novedad:")
     bot.register_next_step_handler(msg, guardar_novedad_paso)
@@ -501,6 +503,7 @@ if __name__ == "__main__":
     Thread(target=run).start() # Inicia el servidor web en segundo plano
     print("🤖 AgroGuardian Lab Iniciado.")
     bot.infinity_polling()
+
 
 
 
