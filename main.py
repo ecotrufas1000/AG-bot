@@ -1,7 +1,10 @@
 import threading
 from flask import Flask
 import os
+import telebot
 
+TOKEN = os.getenv("TELEGRAM_TOKEN")
+bot = telebot.TeleBot(TOKEN)
 # Mini servidor para que Render no mate el proceso
 app = Flask(__name__)
 
@@ -564,6 +567,7 @@ if __name__ == "__main__":
         bot.polling(none_stop=True, interval=0, timeout=20)
     except Exception as e:
         print(f"❌ Error: {e}")
+
 
 
 
