@@ -255,47 +255,55 @@ def recibir_ubicacion_gps(message):
     menu_principal_profesional(chat_id)
 
 # ======================================================
-# LÓGICA DE CLIMA Y CÁLCULOS
-# ======================================================
-# Reemplaza tu función mostrar_clima por esta:
 def mostrar_clima(message):
-    memoria = leer_memoria(message.chat.id)
-    lat, lon = memoria.get("lat"), memoria.get("lon")
-    if not lat: return bot.send_message(message.chat.id, "📍 Vinculá tu GPS primero.")
-
     try:
-        url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={WEATHER_KEY}&units=metric&lang=es"
-        response = requests.get(url)
-        r = response.json()
+        memoria = leer_memoria(message.chat.id)
+        lat, lon = memoria.get("lat"), memoria.get("lon")
         
-        if response.status_code != 200:
-            return bot.send_message(message.chat.id, f"❌ Error de Clima: {r.get('message', 'Sin respuesta')}")
+        if not lat:
+            return bot.send_message(message.chat.id, "📍 *GPS no detectado.*\nPor favor, enviá tu ubicación para ver el clima de tu lote.")
 
-        temp = r['main']['temp']
-        bot.send_message(message.chat.id, f"🌡️ Temp: `{temp}°C`", parse_mode="Markdown")
+        # 1. Llamada a la API
+        url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={WEATHER_KEY}&units=metric&lang=es"
+        response = requests.get(url, timeout=10)
+        r = response.json()
+
+        if response.status_code == 200:
+            # 2. Extracción de datos (DENTRO del bloque seguro)
+            temp = r['main']['temp']
+            hum = r['main']['humidity']
+            v_vel = round(r['wind']['speed'] * 3.6, 1) # m/s a km/h
+            desc = r['weather'][0]['description'].upper()
+            
+            # 3. Cálculo de Punto de Rocío (Dew Point)
+            import math # Asegurate de tener 'import math' arriba de todo en el archivo
+            a, b = 17.27, 237.7
+            alpha = ((a * temp) / (b + temp)) + math.log(hum/100.0)
+            t_dp = round((b * alpha) / (a - alpha), 1)
+            
+            # 4. Mensaje UNIFICADO para el productor
+            texto = (
+                f"📊 *REPORTE AGROMETEOROLÓGICO*\n"
+                f"━━━━━━━━━━━━━━━━━━\n"
+                f"🌡️ *Temp:* `{temp}°C` \n"
+                f"💧 *Humedad:* `{hum}%` \n"
+                f"❄️ *Punto Rocío:* `{t_dp}°C` \n"
+                f"🌬️ *Viento:* `{v_vel} km/h` \n"
+                f"🛰️ *Estado:* `{desc}`\n"
+                f"━━━━━━━━━━━━━━━━━━"
+            )
+            bot.send_message(message.chat.id, texto, parse_mode="Markdown")
+            menu_principal_profesional(message.chat.id)
+
+        else:
+            # Error controlado: Avisamos al admin y mensaje suave al usuario
+            bot.send_message(message.chat.id, "🛰️ Servicio de datos demorado. Reintentá en unos minutos.")
+            reportar_error_al_admin(f"API Clima falló (Code {response.status_code}): {r.get('message')}", "Función Clima")
+
     except Exception as e:
-        bot.send_message(message.chat.id, f"⚠️ Error técnico: {e}")
-    
-    temp = r['main']['temp']
-    hum = r['main']['humidity']
-    v_vel = round(r['wind']['speed'] * 3.6, 1)
-    
-    # Punto de rocío
-    a, b = 17.27, 237.7
-    alpha = ((a * temp) / (b + temp)) + math.log(hum/100.0)
-    t_dp = round((b * alpha) / (a - alpha), 1)
-    
-    texto = (
-        f"📊 *DATOS ATMOSFÉRICOS*\n"
-        f"🌡️ Temp: `{temp}°C` | HR: `{hum}%` \n"
-        f"❄️ Dew Point: `{t_dp}°C` \n"
-        f"🌬️ Viento: `{v_vel} km/h` \n"
-        f"🛰️ Estado: `{r['weather'][0]['description'].upper()}`"
-    )
-    bot.send_message(message.chat.id, texto, parse_mode="Markdown")
-    menu_principal_profesional(message.chat.id)
-
-# ======================================================
+        # Error crítico: El bot no se apaga, solo avisa
+        bot.send_message(message.chat.id, "⚠️ No pudimos procesar los datos del lote.")
+        reportar_error_al_admin(str(e), "Excepción Crítica en Clima")
 # CONFIGURACIÓN LOTE / CULTIVO
 # ======================================================
 def guardar_lote(message):
@@ -492,6 +500,7 @@ if __name__ == "__main__":
     Thread(target=run).start() # Inicia el servidor web en segundo plano
     print("🤖 AgroGuardian Lab Iniciado.")
     bot.infinity_polling()
+
 
 
 
