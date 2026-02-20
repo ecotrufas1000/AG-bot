@@ -568,6 +568,28 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"❌ Error: {e}")
 
+import os
+import threading
+from flask import Flask
+
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    return "Bot Agrónomo Online"
+
+# --- EL BLOQUE CRUCIAL ---
+if __name__ == "__main__":
+    # 1. Iniciamos Flask en un hilo separado para que Render no nos corte
+    print("🌐 Iniciando servidor Flask...")
+    threading.Thread(target=lambda: app.run(host='0.0.0.0', port=10000)).start()
+    
+    # 2. Iniciamos el Polling del bot (esto debe ser lo ÚLTIMO)
+    print("🚀 BOT ESCUCHANDO MENSAJES...")
+    try:
+        bot.infinity_polling(timeout=10, long_polling_timeout=5)
+    except Exception as e:
+        print(f"❌ Error en polling: {e}")
 
 
 
