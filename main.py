@@ -551,19 +551,19 @@ def run_flask():
     app.run(host="0.0.0.0", port=10000)
 
 if __name__ == "__main__":
-    # 1. Arrancamos Flask en un hilo separado (en segundo plano)
-    import threading
+    # Forzamos el inicio de Flask
     t = threading.Thread(target=run_flask)
     t.daemon = True
     t.start()
     
-    # 2. Mensaje de control para ver en el log
-    print("✅ Servidor Flask en segundo plano iniciado")
-    print("🚀 Iniciando polling de Telegram...")
+    print("✅ Web Server iniciado en puerto 10000")
     
-    # 3. Arrancamos el bot (esto es lo que lo mantiene vivo)
-    bot.infinity_polling(timeout=10, long_polling_timeout=5)
-
+    # Iniciamos el bot con configuraciones de reconexión
+    print("🚀 BOT ESCUCHANDO EN TELEGRAM...")
+    try:
+        bot.polling(none_stop=True, interval=0, timeout=20)
+    except Exception as e:
+        print(f"❌ Error: {e}")
 
 
 
