@@ -558,6 +558,7 @@ def run_flask():
     app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
 
 if __name__ == "__main__":
+    # 1. Iniciamos Flask en un hilo
     t = threading.Thread(target=run_flask)
     t.daemon = True
     t.start()
@@ -565,11 +566,9 @@ if __name__ == "__main__":
     print("🎬 SISTEMA ARRANCANDO...")
     print("🚀 BOT CONECTANDO A TELEGRAM...")
 
-    try:
-   # EL BOT con esteroides de estabilidad
+    # 2. El bloque del bot alineado con el código de arriba
     try:
         bot.remove_webhook()
-        # Agregamos skip_pending_updates para que no se sature al arrancar
         bot.infinity_polling(
             timeout=60, 
             long_polling_timeout=30, 
@@ -577,8 +576,6 @@ if __name__ == "__main__":
         )
     except Exception as e:
         print(f"❌ ERROR: {e}")
-
-
 
 
 
