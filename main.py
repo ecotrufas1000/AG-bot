@@ -7,7 +7,6 @@ import math
 from telebot import types
 from dotenv import load_dotenv
 import google.generativeai as genai
-from google.genai import types as genai_types
 
 # ======================================================
 # CONFIGURACIÓN
@@ -21,7 +20,9 @@ SUPABASE_URL = "https://ieodzygauglvdkendvmj.supabase.co"
 
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
-client = genai.Client(api_key=GEMINI_API_KEY)
+# Reemplazá tu línea de 'client =' por esto:
+genai.configure(api_key=GEMINI_API_KEY)
+model_ia = genai.GenerativeModel('gemini-1.5-flash') # Es más estable para visión
 
 # Nombres de modelos actualizados
 MODEL_TEXT = "gemini-2.0-flash"
@@ -152,20 +153,7 @@ def callback_menu(call):
 # ======================================================
 @bot.message_handler(content_types=['location'])
 #bot.send_message(chat_id, f"🚀 ESTA ES LA VERSION NUEVA: {lat}, {lon}")
-def recibir_ubicacion_gps(message):
-    chat_id = message.chat.id
-    
-    # EXTRAEMOS LAS COORDENADAS REALES DEL MENSAJE DE TELEGRAM
-    lat_real = message.location.latitude
-    lon_real = message.location.longitude
-    
-    # 1. Guardamos en la memoria local del bot
-    actualizar_memoria(chat_id, "lat", lat_real)
-    actualizar_memoria(chat_id, "lon", lon_real)
-    
-    memoria = leer_memoria(chat_id)
-    lote = memoria.get("lote_activo", "General")
-    
+
     # 2. Intentamos mandar a la nube (Supabase)
     try:
         registro_gps = {
@@ -306,24 +294,21 @@ def pedir_foto(message):
 
 def analizar_foto(message):
     if not message.photo:
-        bot.send_message(message.chat.id, "❌ No se recibió imagen.")
-        return
+        return bot.send_message(message.chat.id, "❌ No se recibió imagen.")
     
     bot.send_message(message.chat.id, "🧠 *LABORATORIO IA:* Analizando muestra...")
     file_info = bot.get_file(message.photo[-1].file_id)
     downloaded = bot.download_file(file_info.file_path)
 
     try:
-        response = client.models.generate_content(
-            model=MODEL_VISION,
-            contents=[
-                "Actúa como un ingeniero agrónomo. Analiza plagas, enfermedades o deficiencias. Sé breve.",
-                genai_types.Part.from_bytes(downloaded, mime_type="image/jpeg")
-            ]
-        )
+        # Forma correcta de enviar imagen a Gemini con la librería estable
+        image_parts = [{"mime_type": "image/jpeg", "data": downloaded}]
+        prompt = "Actúa como un ingeniero agrónomo. Analiza plagas, enfermedades o deficiencias. Sé breve."
+        
+        response = model_ia.generate_content([prompt, image_parts[0]])
         bot.send_message(message.chat.id, f"🔬 *REPORTE IA:*\n{response.text}", parse_mode="Markdown")
     except Exception as e:
-        bot.send_message(message.chat.id, "⚠️ Error en motor IA.")
+        bot.send_message(message.chat.id, f"⚠️ Error en motor IA: {e}")
     
     menu_principal_profesional(message.chat.id)
 
@@ -444,9 +429,22 @@ def guardar_lluvia(message):
 @bot.message_handler(commands=["start"])
 def start(message):
     menu_principal_profesional(message.chat.id)
+# --- AGREGÁ ESTO ANTES DEL FINAL PARA QUE RENDER NO TE APAGUE EL BOT ---
+from flask import Flask
+from threading import Thread
 
-print("🤖 AgroGuardian Lab Iniciado.")
-bot.infinity_polling()
+app = Flask(__name__)
+@app.route('/')
+def health(): return "Bot vivo", 200
+
+def run():
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
+
+if __name__ == "__main__":
+    Thread(target=run).start() # Inicia el servidor web en segundo plano
+    print("🤖 AgroGuardian Lab Iniciado.")
+    bot.infinity_polling()
+
 
 
 
