@@ -498,9 +498,7 @@ except Exception as e:
     supabase = None 
 
 # --- DESPUÉS DE ESTO DEBERÍA VENIR EL ARRANQUE DEL BOT ---
-if __name__ == "__main__":
-    print("🚀 BOT INICIADO Y CORRIENDO...")
-    bot.infinity_polling()
+
 def guardar_lluvia(message):
     chat_id = str(message.chat.id)
     try:
@@ -574,6 +572,7 @@ if __name__ == "__main__":
         bot.infinity_polling(timeout=20, long_polling_timeout=10)
     except Exception as e:
         print(f"❌ ERROR: {e}")
+
 
 
 
