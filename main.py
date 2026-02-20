@@ -551,9 +551,16 @@ def run():
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
 
 if __name__ == "__main__":
-    Thread(target=run).start() # Inicia el servidor web en segundo plano
-    print("🤖 AgroGuardian Lab Iniciado.")
-    bot.infinity_polling()
+    # Iniciamos el hilo de Flask para Render
+    threading.Thread(target=run_flask, daemon=True).start()
+    
+    # Iniciamos el bot de Telegram
+    try:
+        print("🚀 BOT INICIADO Y ESCUCHANDO...")
+        bot.infinity_polling(timeout=20, long_polling_timeout=10)
+    except Exception as e:
+        print(f"❌ Error fatal en el bot: {e}")
+
 
 
 
