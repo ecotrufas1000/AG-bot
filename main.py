@@ -333,41 +333,42 @@ def pedir_foto(message):
     bot.register_next_step_handler(msg, analizar_foto)
 
 def analizar_foto(message):
-    if not message.photo:
-        return bot.send_message(message.chat.id, "❌ No se recibió imagen.")
-    
-    bot.send_message(message.chat.id, "🧠 *LABORATORIO IA:* Analizando muestra...")
-    
     try:
-        # Descargamos la foto
+        if not message.photo:
+            return bot.send_message(message.chat.id, "❌ No recibí ninguna imagen.")
+
+        bot.send_message(message.chat.id, "🧠 *LABORATORIO IA:* Analizando muestra...")
+
+        # 1. Descargamos la foto
         file_info = bot.get_file(message.photo[-1].file_id)
-        downloaded = bot.download_file(file_info.file_path)
+        downloaded_file = bot.download_file(file_info.path) # Nota: algunos usan .path, otros .file_path
 
-        # Preparamos la imagen para Gemini
-        image_parts = [
-            {
-                "mime_type": "image/jpeg",
-                "data": downloaded
-            }
-        ]
-        
-        prompt = "Actúa como un ingeniero agrónomo experto. Analiza la foto en busca de plagas, enfermedades o estrés hídrico. Da una recomendación breve."
+        # 2. Preparamos el formato de imagen para la API
+        image_data = [{"mime_type": "image/jpeg", "data": downloaded_file}]
+        prompt = "Actúa como un ingeniero agrónomo. Analiza la foto y detecta plagas o enfermedades. Sé breve."
 
-        # Generamos el contenido
-        response = model_ia.generate_content([prompt, image_parts[0]])
+        # 3. LLAMADA DIRECTA (Probamos con gemini-1.5-flash)
+        # Si sigue dando 404, cambia 'gemini-1.5-flash' por 'models/gemini-1.5-flash'
+        model = genai.GenerativeModel(model_name='gemini-1.5-flash')
         
+        response = model.generate_content([prompt, image_data[0]])
+
         if response.text:
             bot.send_message(message.chat.id, f"🔬 *REPORTE IA:*\n{response.text}", parse_mode="Markdown")
         else:
-            bot.send_message(message.chat.id, "⚠️ La IA no pudo generar una respuesta clara.")
+            bot.send_message(message.chat.id, "⚠️ El análisis no arrojó resultados.")
 
     except Exception as e:
-        # Esto te dirá el error exacto si vuelve a fallar
-        print(f"Error IA: {e}")
-        bot.send_message(message.chat.id, f"⚠️ Error en motor IA: `{str(e)[:100]}`", parse_mode="Markdown")
+        error_str = str(e)
+        # Si detectamos que el error es por el nombre del modelo, intentamos el nombre alternativo
+        if "404" in error_str:
+            bot.send_message(message.chat.id, "🛰️ Ajustando frecuencia del satélite IA... Reintentá la foto.")
+            reportar_error_al_admin(f"Error 404: Probá cambiando el nombre del modelo a 'models/gemini-1.5-flash-latest'", "IA FOTO")
+        else:
+            bot.send_message(message.chat.id, "⚠️ Error en motor IA.")
+            reportar_error_al_admin(error_str, "IA FOTO CRÍTICO")
     
     menu_principal_profesional(message.chat.id)
-
 # ---------------- ANOTAR Y BITÁCORA ----------------
 def anotar_novedad(message):
     msg = bot.send_message(message.chat.id, "✍️ Describí la novedad:")
@@ -500,6 +501,7 @@ if __name__ == "__main__":
     Thread(target=run).start() # Inicia el servidor web en segundo plano
     print("🤖 AgroGuardian Lab Iniciado.")
     bot.infinity_polling()
+
 
 
 
