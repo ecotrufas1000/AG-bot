@@ -547,22 +547,22 @@ app = Flask(__name__)
 @app.route('/')
 def health(): return "Bot vivo", 200
 
-def run():
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
+def run_flask():
+    app.run(host="0.0.0.0", port=10000)
 
 if __name__ == "__main__":
-    # Iniciamos el hilo de Flask para Render
-    threading.Thread(target=run_flask, daemon=True).start()
+    # 1. Arrancamos Flask en un hilo separado (en segundo plano)
+    import threading
+    t = threading.Thread(target=run_flask)
+    t.daemon = True
+    t.start()
     
-    # Iniciamos el bot de Telegram
-    try:
-        print("🚀 BOT INICIADO Y ESCUCHANDO...")
-        bot.infinity_polling(timeout=20, long_polling_timeout=10)
-    except Exception as e:
-        print(f"❌ Error fatal en el bot: {e}")
-
-
-
+    # 2. Mensaje de control para ver en el log
+    print("✅ Servidor Flask en segundo plano iniciado")
+    print("🚀 Iniciando polling de Telegram...")
+    
+    # 3. Arrancamos el bot (esto es lo que lo mantiene vivo)
+    bot.infinity_polling(timeout=10, long_polling_timeout=5)
 
 
 
