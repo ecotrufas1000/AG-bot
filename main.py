@@ -155,7 +155,7 @@ def callback_menu(call):
 #bot.send_message(chat_id, f"🚀 ESTA ES LA VERSION NUEVA: {lat}, {lon}")
 
     # 2. Intentamos mandar a la nube (Supabase)
-    try:
+     try:
         registro_gps = {
             "chat_id": str(chat_id),
             "lote": f"GPS: {lote}",
@@ -166,7 +166,7 @@ def callback_menu(call):
         }
         supabase.table("registros_lluvia").insert(registro_gps).execute()
         sync_status = "🌐 *Sincronizado con Panel Web*"
-    except Exception as e:
+     except Exception as e:
         print(f"Error Supabase: {e}")
         sync_status = "⚠️ *Error de sincronización nube*"
 
@@ -234,15 +234,24 @@ def recibir_ubicacion_gps(message):
 # ======================================================
 # LÓGICA DE CLIMA Y CÁLCULOS
 # ======================================================
+# Reemplaza tu función mostrar_clima por esta:
 def mostrar_clima(message):
     memoria = leer_memoria(message.chat.id)
     lat, lon = memoria.get("lat"), memoria.get("lon")
-    if not lat or not lon:
-        bot.send_message(message.chat.id, "📍 *Error:* Primero vinculá tu GPS con el botón del menú.")
-        return
-    
-    url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={WEATHER_KEY}&units=metric&lang=es"
-    r = requests.get(url).json()
+    if not lat: return bot.send_message(message.chat.id, "📍 Vinculá tu GPS primero.")
+
+    try:
+        url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={WEATHER_KEY}&units=metric&lang=es"
+        response = requests.get(url)
+        r = response.json()
+        
+        if response.status_code != 200:
+            return bot.send_message(message.chat.id, f"❌ Error de Clima: {r.get('message', 'Sin respuesta')}")
+
+        temp = r['main']['temp']
+        bot.send_message(message.chat.id, f"🌡️ Temp: `{temp}°C`", parse_mode="Markdown")
+    except Exception as e:
+        bot.send_message(message.chat.id, f"⚠️ Error técnico: {e}")
     
     temp = r['main']['temp']
     hum = r['main']['humidity']
@@ -444,6 +453,7 @@ if __name__ == "__main__":
     Thread(target=run).start() # Inicia el servidor web en segundo plano
     print("🤖 AgroGuardian Lab Iniciado.")
     bot.infinity_polling()
+
 
 
 
