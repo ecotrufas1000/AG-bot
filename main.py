@@ -6,7 +6,7 @@ import datetime
 import math
 from telebot import types
 from dotenv import load_dotenv
-from google import genai
+import google.generativeai as genai
 from google.genai import types as genai_types
 
 # ======================================================
@@ -447,5 +447,6 @@ def start(message):
 
 print("🤖 AgroGuardian Lab Iniciado.")
 bot.infinity_polling()
+
 
 
