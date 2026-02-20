@@ -319,18 +319,34 @@ def analizar_foto(message):
         return bot.send_message(message.chat.id, "❌ No se recibió imagen.")
     
     bot.send_message(message.chat.id, "🧠 *LABORATORIO IA:* Analizando muestra...")
-    file_info = bot.get_file(message.photo[-1].file_id)
-    downloaded = bot.download_file(file_info.file_path)
-
+    
     try:
-        # Forma correcta de enviar imagen a Gemini con la librería estable
-        image_parts = [{"mime_type": "image/jpeg", "data": downloaded}]
-        prompt = "Actúa como un ingeniero agrónomo. Analiza plagas, enfermedades o deficiencias. Sé breve."
+        # Descargamos la foto
+        file_info = bot.get_file(message.photo[-1].file_id)
+        downloaded = bot.download_file(file_info.file_path)
+
+        # Preparamos la imagen para Gemini
+        image_parts = [
+            {
+                "mime_type": "image/jpeg",
+                "data": downloaded
+            }
+        ]
         
+        prompt = "Actúa como un ingeniero agrónomo experto. Analiza la foto en busca de plagas, enfermedades o estrés hídrico. Da una recomendación breve."
+
+        # Generamos el contenido
         response = model_ia.generate_content([prompt, image_parts[0]])
-        bot.send_message(message.chat.id, f"🔬 *REPORTE IA:*\n{response.text}", parse_mode="Markdown")
+        
+        if response.text:
+            bot.send_message(message.chat.id, f"🔬 *REPORTE IA:*\n{response.text}", parse_mode="Markdown")
+        else:
+            bot.send_message(message.chat.id, "⚠️ La IA no pudo generar una respuesta clara.")
+
     except Exception as e:
-        bot.send_message(message.chat.id, f"⚠️ Error en motor IA: {e}")
+        # Esto te dirá el error exacto si vuelve a fallar
+        print(f"Error IA: {e}")
+        bot.send_message(message.chat.id, f"⚠️ Error en motor IA: `{str(e)[:100]}`", parse_mode="Markdown")
     
     menu_principal_profesional(message.chat.id)
 
@@ -466,6 +482,7 @@ if __name__ == "__main__":
     Thread(target=run).start() # Inicia el servidor web en segundo plano
     print("🤖 AgroGuardian Lab Iniciado.")
     bot.infinity_polling()
+
 
 
 
