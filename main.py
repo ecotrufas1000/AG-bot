@@ -3,8 +3,7 @@ from flask import Flask
 import os
 import telebot
 
-TOKEN = os.getenv("TELEGRAM_TOKEN")
-bot = telebot.TeleBot(TOKEN)
+
 # Mini servidor para que Render no mate el proceso
 app = Flask(__name__)
 
@@ -18,7 +17,6 @@ def run_flask():
     app.run(host='0.0.0.0', port=port)
 
 # Lanzamos la web en segundo plano
-threading.Thread(target=run_flask, daemon=True).start()
 import telebot
 import requests
 import json
@@ -60,7 +58,10 @@ except Exception as e:
     supabase = None
 
 # 4. CONFIGURACIÓN DEL BOT
-bot = telebot.TeleBot(os.getenv("TELEGRAM_TOKEN"))
+load_dotenv()
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+
+bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
 # ... siguen las funciones (def mostrar_clima, etc.)
 # CONFIGURACIÓN
@@ -73,7 +74,7 @@ SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 SUPABASE_URL = "https://ieodzygauglvdkendvmj.supabase.co"
 
 
-bot = telebot.TeleBot(TELEGRAM_TOKEN)
+
 # Reemplazá tu línea de 'client =' por esto:
 genai.configure(api_key=GEMINI_API_KEY)
 model_ia = genai.GenerativeModel('gemini-1.5-flash') # Es más estable para visión
@@ -569,6 +570,7 @@ if __name__ == "__main__":
         bot.infinity_polling(timeout=20, long_polling_timeout=10)
     except Exception as e:
         print(f"❌ ERROR: {e}")
+
 
 
 
