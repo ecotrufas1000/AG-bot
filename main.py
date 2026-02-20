@@ -8,7 +8,22 @@ import google.generativeai as genai
 from telebot import types
 from dotenv import load_dotenv
 from supabase import create_client
+import threading
+from flask import Flask
+import os
 
+# Esto crea una mini página web falsa para engañar a Render
+app = Flask(__name__)
+@app.route('/')
+def health_check():
+    return "Bot vivo", 200
+
+def run_flask():
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
+
+# Arranca la web falsa en un hilo separado
+threading.Thread(target=run_flask, daemon=True).start()
 # ... después de los imports (telebot, os, genai, etc.)
 
 # 1. CARGA DE VARIABLES
@@ -534,6 +549,7 @@ if __name__ == "__main__":
     Thread(target=run).start() # Inicia el servidor web en segundo plano
     print("🤖 AgroGuardian Lab Iniciado.")
     bot.infinity_polling()
+
 
 
 
