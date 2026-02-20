@@ -543,98 +543,39 @@ def guardar_lluvia(message):
 def start(message):
     menu_principal_profesional(message.chat.id)
 # --- AGREGÁ ESTO ANTES DEL FINAL PARA QUE RENDER NO TE APAGUE EL BOT ---
-from flask import Flask
-from threading import Thread
-
-app = Flask(__name__)
-@app.route('/')
-def health(): return "Bot vivo", 200
-
-def run_flask():
-    app.run(host="0.0.0.0", port=10000)
-
-if __name__ == "__main__":
-    # Forzamos el inicio de Flask
-    t = threading.Thread(target=run_flask)
-    t.daemon = True
-    t.start()
-    
-    print("✅ Web Server iniciado en puerto 10000")
-    
-    # Iniciamos el bot con configuraciones de reconexión
-    print("🚀 BOT ESCUCHANDO EN TELEGRAM...")
-    try:
-        bot.polling(none_stop=True, interval=0, timeout=20)
-    except Exception as e:
-        print(f"❌ Error: {e}")
-
-# ... (aquí va todo tu código de handlers de fotos y texto)
-
-print("📌 El código llegó al bloque final...") # Esto nos dirá si el archivo se lee completo
-
-if __name__ == "__main__":
-    try:
-        print("🌐 Configurando Flask...")
-        import threading
-        # Usamos daemon=True para que el hilo no bloquee la salida
-        t = threading.Thread(target=lambda: app.run(host='0.0.0.0', port=10000))
-        t.daemon = True
-        t.start()
-        print("✅ Servidor Flask iniciado.")
-
-        print("🚀 Intentando conectar con Telegram...")
-        # Eliminamos cualquier webhook previo por código por si acaso
-        bot.remove_webhook()
-        print("🚀 BOT ESCUCHANDO MENSAJES...")
-        bot.infinity_polling(timeout=20, long_polling_timeout=10)
-        
-    except Exception as e:
-        print(f"❌ ERROR CRÍTICO AL ARRANCAR: {e}")
-
-# --- BLOQUE FINAL ÚNICO (Pegar al final de todo el archivo) ---
+# --- SOLO ESTO AL FINAL DE TODO EL ARCHIVO ---
+import os
 from flask import Flask
 import threading
 
 app = Flask(__name__)
 
 @app.route('/')
-def health(): 
-    return "Bot vivo", 200
+def health():
+    return "Bot Agrónomo Online", 200
 
 def run_flask():
-    app.run(host="0.0.0.0", port=10000)
+    # Render usa el puerto 10000 por defecto
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
 
 if __name__ == "__main__":
+    # 1. Imprimimos algo para saber que el código arrancó
+    print("🎬 Iniciando sistema...")
+
+    # 2. Lanzamos Flask en segundo plano (hilo)
+    t = threading.Thread(target=run_flask)
+    t.daemon = True
+    t.start()
+    print("✅ Servidor Flask corriendo en paralelo...")
+
+    # 3. Lanzamos el Bot (esto mantiene el proceso principal ocupado)
+    print("🚀 BOT ESCUCHANDO MENSAJES EN TELEGRAM...")
     try:
-        print("📌 El código llegó al bloque final...")
-        
-        # 1. Iniciamos Flask en un hilo separado
-        flask_thread = threading.Thread(target=run_flask)
-        flask_thread.daemon = True
-        flask_thread.start()
-        print("✅ Servidor Flask iniciado en puerto 10000")
-
-        # 2. Limpiamos cualquier conexión previa
-        print("🚀 Intentando conectar con Telegram...")
-        bot.remove_webhook()
-        
-        # 3. Iniciamos el bot (Esto es lo que mantiene todo vivo)
-        print("🚀 BOT ESCUCHANDO MENSAJES...")
+        bot.remove_webhook() # Limpia cualquier conexión vieja
         bot.infinity_polling(timeout=20, long_polling_timeout=10)
-        
     except Exception as e:
-        print(f"❌ ERROR CRÍTICO AL ARRANCAR: {e}")
-
-
-
-
-
-
-
-
-
-
-
+        print(f"❌ Error en el bot: {e}")
 
 
 
