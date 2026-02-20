@@ -12,7 +12,17 @@ MODEL_VISION = "gemini-1.5-flash"
 
 genai.configure(api_key=GEMINI_API_KEY)
 model_ia = genai.GenerativeModel(MODEL_VISION)
+# Reemplaza esto con tu ID de Telegram real (lo podés sacar con @userinfobot)
+ADMIN_ID = "6906652917" 
 
+def reportar_error_al_admin(error_msg, context="General"):
+    """Envía el error técnico al administrador y lo imprime en consola."""
+    mensaje_tecnico = f"🚨 *LOG DE ERROR*\n📍 *Contexto:* {context}\n📝 *Detalle:* `{error_msg}`"
+    print(mensaje_tecnico) # Esto sale en Render
+    try:
+        bot.send_message(ADMIN_ID, mensaje_tecnico, parse_mode="Markdown")
+    except:
+        pass # Si falla el envío al admin, que no se rompa el bot
 # ======================================================
 # CONFIGURACIÓN
 # ======================================================
@@ -482,6 +492,7 @@ if __name__ == "__main__":
     Thread(target=run).start() # Inicia el servidor web en segundo plano
     print("🤖 AgroGuardian Lab Iniciado.")
     bot.infinity_polling()
+
 
 
 
