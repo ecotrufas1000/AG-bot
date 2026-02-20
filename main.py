@@ -543,10 +543,9 @@ def guardar_lluvia(message):
 def start(message):
     menu_principal_profesional(message.chat.id)
 # --- AGREGÁ ESTO ANTES DEL FINAL PARA QUE RENDER NO TE APAGUE EL BOT ---
-# --- SOLO ESTO AL FINAL DE TODO EL ARCHIVO ---
 import os
-from flask import Flask
 import threading
+from flask import Flask
 
 app = Flask(__name__)
 
@@ -554,28 +553,28 @@ app = Flask(__name__)
 def health():
     return "Bot Agrónomo Online", 200
 
-def run_flask():
-    # Render usa el puerto 10000 por defecto
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
-
-if __name__ == "__main__":
-    # 1. Imprimimos algo para saber que el código arrancó
-    print("🎬 Iniciando sistema...")
-
-    # 2. Lanzamos Flask en segundo plano (hilo)
-    t = threading.Thread(target=run_flask)
-    t.daemon = True
-    t.start()
-    print("✅ Servidor Flask corriendo en paralelo...")
-
-    # 3. Lanzamos el Bot (esto mantiene el proceso principal ocupado)
-    print("🚀 BOT ESCUCHANDO MENSAJES EN TELEGRAM...")
+# --- ESTA FUNCIÓN ES LA CLAVE ---
+def start_bot():
+    print("🚀 INTENTANDO CONECTAR A TELEGRAM...")
     try:
-        bot.remove_webhook() # Limpia cualquier conexión vieja
+        bot.remove_webhook()
+        print("✅ BOT ESCUCHANDO MENSAJES...")
         bot.infinity_polling(timeout=20, long_polling_timeout=10)
     except Exception as e:
         print(f"❌ Error en el bot: {e}")
+
+if __name__ == "__main__":
+    print("🎬 INICIANDO SISTEMA...")
+    
+    # Lanzamos el bot en un hilo ANTES que Flask
+    bot_thread = threading.Thread(target=start_bot)
+    bot_thread.start()
+    
+    # Iniciamos Flask (esto es lo que Render monitorea)
+    print("🌐 Iniciando Servidor Web...")
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
+
 
 
 
