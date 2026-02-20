@@ -566,10 +566,18 @@ if __name__ == "__main__":
     print("🚀 BOT CONECTANDO A TELEGRAM...")
 
     try:
+   # EL BOT con esteroides de estabilidad
+    try:
         bot.remove_webhook()
-        bot.infinity_polling(timeout=20, long_polling_timeout=10)
+        # Agregamos skip_pending_updates para que no se sature al arrancar
+        bot.infinity_polling(
+            timeout=60, 
+            long_polling_timeout=30, 
+            skip_pending_updates=True
+        )
     except Exception as e:
         print(f"❌ ERROR: {e}")
+
 
 
 
