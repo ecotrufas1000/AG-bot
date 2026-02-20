@@ -9,35 +9,37 @@ from telebot import types
 from dotenv import load_dotenv
 from supabase import create_client
 
-# 1. Cargar variables
+# ... después de los imports (telebot, os, genai, etc.)
+
+# 1. CARGA DE VARIABLES
 load_dotenv()
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 ADMIN_ID = "6906652917"
+# (Cargá acá el resto de tus variables de Render...)
+
+# 2. CONFIGURACIÓN DE GEMINI (Lo que ya hicimos)
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+model_ia = genai.GenerativeModel('gemini-1.5-flash')
+
+# 3. AQUÍ PONÉ EL BLOQUE DE SUPABASE (El que me pasaste)
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-# 2. Configurar IA y Diagnóstico (Sin errores de espacios)
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
-    try:
-        print("--- DIAGNÓSTICO DE MODELOS ---")
-        # Listamos modelos para ver qué ve tu llave
-        for m in genai.list_models():
-            if 'generateContent' in m.supported_generation_methods:
-                print(f"Modelo detectado: {m.name}")
-    except Exception as e:
-        print(f"Error en diagnóstico: {e}")
-    
-    model_ia = genai.GenerativeModel('gemini-1.5-flash')
-else:
-    print("❌ ERROR: No se encontró GEMINI_API_KEY")
-
-# 3. Conexión segura con Supabase
 try:
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-    print("✅ Conexión con Supabase establecida.")
+    if SUPABASE_URL and SUPABASE_KEY:
+        from supabase import create_client # Asegúrate de tener este import
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+        print("✅ Conexión con Supabase exitosa.")
+    else:
+        print("⚠️ Faltan credenciales de Supabase en las variables de entorno.")
+        supabase = None
 except Exception as e:
-    print(f"❌ Error Supabase: {e}")
+    print(f"❌ Error al conectar a Supabase: {e}")
+    supabase = None
+
+# 4. CONFIGURACIÓN DEL BOT
+bot = telebot.TeleBot(os.getenv("TELEGRAM_TOKEN"))
+
+# ... siguen las funciones (def mostrar_clima, etc.)
 # CONFIGURACIÓN
 # ======================================================
 load_dotenv()
@@ -517,6 +519,7 @@ if __name__ == "__main__":
     Thread(target=run).start() # Inicia el servidor web en segundo plano
     print("🤖 AgroGuardian Lab Iniciado.")
     bot.infinity_polling()
+
 
 
 
