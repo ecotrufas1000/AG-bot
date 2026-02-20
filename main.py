@@ -7,7 +7,7 @@ import math
 from telebot import types
 from dotenv import load_dotenv
 # Cambiá esto en la parte superior de tu código
-MODEL_VISION = "gemini-1.5-flash" 
+model = genai.GenerativeModel('models/gemini-1.5-flash-latest')
 # O probá con el más nuevo si el anterior falla: "gemini-2.0-flash"
 
 genai.configure(api_key=GEMINI_API_KEY)
@@ -503,6 +503,7 @@ if __name__ == "__main__":
     Thread(target=run).start() # Inicia el servidor web en segundo plano
     print("🤖 AgroGuardian Lab Iniciado.")
     bot.infinity_polling()
+
 
 
 
