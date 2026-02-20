@@ -567,16 +567,17 @@ if __name__ == "__main__":
     print("🚀 BOT CONECTANDO A TELEGRAM...")
 
     # 2. El bloque del bot alineado con el código de arriba
+  # 2. El bloque del bot estable
     try:
+        # Primero limpiamos cualquier conexión previa
         bot.remove_webhook()
-        bot.infinity_polling(
-            timeout=60, 
-            long_polling_timeout=30, 
-            skip_pending_updates=True
-        )
+        print("✅ Conexión con Telegram establecida.")
+        
+        # Usamos los parámetros básicos que aceptan todas las versiones
+        bot.infinity_polling(timeout=60, long_polling_timeout=30)
+        
     except Exception as e:
         print(f"❌ ERROR: {e}")
-
 
 
 
