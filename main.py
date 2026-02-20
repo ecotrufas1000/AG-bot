@@ -591,10 +591,39 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"❌ ERROR CRÍTICO AL ARRANCAR: {e}")
 
+# --- BLOQUE FINAL ÚNICO (Pegar al final de todo el archivo) ---
+from flask import Flask
+import threading
 
+app = Flask(__name__)
 
+@app.route('/')
+def health(): 
+    return "Bot vivo", 200
 
+def run_flask():
+    app.run(host="0.0.0.0", port=10000)
 
+if __name__ == "__main__":
+    try:
+        print("📌 El código llegó al bloque final...")
+        
+        # 1. Iniciamos Flask en un hilo separado
+        flask_thread = threading.Thread(target=run_flask)
+        flask_thread.daemon = True
+        flask_thread.start()
+        print("✅ Servidor Flask iniciado en puerto 10000")
+
+        # 2. Limpiamos cualquier conexión previa
+        print("🚀 Intentando conectar con Telegram...")
+        bot.remove_webhook()
+        
+        # 3. Iniciamos el bot (Esto es lo que mantiene todo vivo)
+        print("🚀 BOT ESCUCHANDO MENSAJES...")
+        bot.infinity_polling(timeout=20, long_polling_timeout=10)
+        
+    except Exception as e:
+        print(f"❌ ERROR CRÍTICO AL ARRANCAR: {e}")
 
 
 
