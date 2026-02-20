@@ -456,13 +456,28 @@ def pedir_lluvia(call):
     msg = bot.send_message(call.message.chat.id, "🌧️ *REGISTRO DE LLUVIAS*\n¿Cuántos mm marcó el pluviómetro?", parse_mode="Markdown")
     bot.register_next_step_handler(msg, guardar_lluvia)
 
-from supabase import create_client
+# --- CONFIGURACIÓN DE SUPABASE (Línea 460 aprox) ---
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-# Configura tus llaves (sacalas de Settings -> API en Supabase)
-SUPABASE_URL = "https://ieodzygauglvdkendvmj.supabase.co"
-SUPABASE_KEY = "sb_secret_SyWyA13u80LI9nz-if5iIw_bUqo0AZB" # <--- Usá la 'service_role' para tener permiso de escritura
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+supabase = None # Empezamos en None por seguridad
 
+try:
+    if SUPABASE_URL and SUPABASE_KEY:
+        from supabase import create_client
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+        # Intentamos una operación mínima para validar la clave realmente
+        print("✅ Intento de conexión con Supabase...")
+    else:
+        print("⚠️ Faltan variables de Supabase en Render.")
+except Exception as e:
+    print(f"❌ Supabase falló, pero el bot sigue vivo. Error: {e}")
+    supabase = None 
+
+# --- DESPUÉS DE ESTO DEBERÍA VENIR EL ARRANQUE DEL BOT ---
+if __name__ == "__main__":
+    print("🚀 BOT INICIADO Y CORRIENDO...")
+    bot.infinity_polling()
 def guardar_lluvia(message):
     chat_id = str(message.chat.id)
     try:
@@ -519,6 +534,7 @@ if __name__ == "__main__":
     Thread(target=run).start() # Inicia el servidor web en segundo plano
     print("🤖 AgroGuardian Lab Iniciado.")
     bot.infinity_polling()
+
 
 
 
