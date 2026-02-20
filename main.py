@@ -15,14 +15,11 @@ ADMIN_ID = "6906652917"
 WEATHER_KEY = os.getenv("WEATHER_KEY") # Asegurate que se llame así en Render
 
 # 2. Configurar Google AI (PRIMERO configurar, DESPUÉS crear modelo)
+# Reemplazá la parte de configuración por esta:
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
-    # Definimos el nombre del modelo en una variable para no repetir
-    MODEL_VISION = 'gemini-1.5-flash' 
-    model_ia = genai.GenerativeModel(MODEL_VISION)
-else:
-    print("❌ ERROR: No se encontró GEMINI_API_KEY")
-
+    # Usamos el nombre técnico completo
+    model_ia = genai.GenerativeModel(model_name="models/gemini-1.5-flash")
 # 3. Configurar el Bot de Telegram
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 bot = telebot.TeleBot(TOKEN)
@@ -514,6 +511,7 @@ if __name__ == "__main__":
     Thread(target=run).start() # Inicia el servidor web en segundo plano
     print("🤖 AgroGuardian Lab Iniciado.")
     bot.infinity_polling()
+
 
 
 
