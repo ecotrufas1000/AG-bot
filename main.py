@@ -18,6 +18,13 @@ WEATHER_KEY = os.getenv("WEATHER_KEY") # Asegurate que se llame así en Render
 # Reemplazá la parte de configuración por esta:
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
+    try:
+    print("--- DIAGNÓSTICO DE MODELOS ---")
+    for m in genai.list_models():
+        if 'generateContent' in m.supported_generation_methods:
+            print(f"Modelo detectado: {m.name}")
+except Exception as e:
+    print(f"FALLO CRÍTICO DE CONEXIÓN: {e}")
     # Usamos el nombre técnico completo
     model_ia = genai.GenerativeModel(model_name="models/gemini-1.5-flash")
 # 3. Configurar el Bot de Telegram
@@ -511,6 +518,7 @@ if __name__ == "__main__":
     Thread(target=run).start() # Inicia el servidor web en segundo plano
     print("🤖 AgroGuardian Lab Iniciado.")
     bot.infinity_polling()
+
 
 
 
