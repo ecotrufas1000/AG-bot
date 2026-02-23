@@ -190,22 +190,32 @@ def analizar_foto(message):
         if not message.photo:
             return bot.send_message(message.chat.id, "❌ No recibí ninguna imagen.")
 
-        bot.send_message(message.chat.id, "🧠 *LABORATORIO IA:* Analizando...")
+        # Mensaje de estado para que el usuario no se desespere
+        status_msg = bot.send_message(message.chat.id, "🧠 *LABORATORIO IA:* Analizando...")
 
         file_info = bot.get_file(message.photo[-1].file_id)
         downloaded_file = bot.download_file(file_info.file_path)
 
-        # Formato para Gemini
-        image_data = {"mime_type": "image/jpeg", "data": downloaded_file}
-        prompt = "Analiza esta imagen como agrónomo experto. Sé breve."
+        # Formato blindado para Gemini
+        image_data = {
+            "mime_type": "image/jpeg",
+            "data": downloaded_file
+        }
+        
+        prompt = "Analiza esta imagen como agrónomo experto. Detecta plagas o enfermedades. Sé muy breve y directo."
 
+        # Usamos el nombre del modelo que rara vez falla
         model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        # Generar contenido pasándole la lista directamente
         response = model.generate_content([prompt, image_data])
 
-        if response.text:
+        if response and response.text:
+            # Editamos el mensaje anterior para que quede más limpio
+            bot.delete_message(message.chat.id, status_msg.message_id)
             bot.send_message(message.chat.id, f"🔬 *REPORTE IA:*\n{response.text}", parse_mode="Markdown")
         else:
-            bot.send_message(message.chat.id, "⚠️ No pude procesar la imagen.")
+            bot.send_message(message.chat.id, "⚠️ La IA no pudo generar una respuesta clara.")
 
         # Limpieza vital para Render
         del downloaded_file
@@ -213,7 +223,10 @@ def analizar_foto(message):
         gc.collect()
 
     except Exception as e:
-        bot.send_message(message.chat.id, f"🚫 *ERROR IA:* `{str(e)}`", parse_mode="Markdown")
+        # Esto te dirá el error real en Telegram si vuelve a fallar
+        error_str = str(e)
+        print(f"Error IA: {error_str}")
+        bot.send_message(message.chat.id, f"🚫 *ERROR TÉCNICO:* `{error_str[:100]}`", parse_mode="Markdown")
     
     menu_principal_profesional(message.chat.id)
 # ======================================================
@@ -587,6 +600,7 @@ if __name__ == "__main__":
                 time.sleep(5)
             
             continue # Vuelve al inicio del 'while True'
+
 
 
 
