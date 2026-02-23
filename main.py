@@ -541,12 +541,17 @@ def guardar_lluvia(message):
         bot.send_message(chat_id, "❌ Error: Envía solo el número.")
     except Exception as e_gen:
         print(f">>> ERROR GENERAL: {e_gen}")# ======================================================
+# ======================================================
+# ARRANQUE Y COMANDOS INICIALES
+# ======================================================
+
 @bot.message_handler(commands=["start"])
 def start(message):
     menu_principal_profesional(message.chat.id)
-# --- AGREGÁ ESTO ANTES DEL FINAL PARA QUE RENDER NO TE APAGUE EL BOT ---
+
 import os
 import threading
+import time
 from flask import Flask
 
 app = Flask(__name__)
@@ -555,34 +560,44 @@ app = Flask(__name__)
 def health():
     return "Bot Agrónomo Online", 200
 
-# Esta función es la que corre el servidor en segundo plano
 def run_flask():
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
-
 if __name__ == "__main__":
-    # 1. Iniciamos Flask en un hilo
+    # 1. Iniciamos Flask en un hilo (El marcapasos para Render)
     t = threading.Thread(target=run_flask)
     t.daemon = True
     t.start()
 
     print("🎬 SISTEMA ARRANCANDO...")
-    print("🚀 BOT CONECTANDO A TELEGRAM...")
 
-    # 2. El bloque del bot alineado con el código de arriba
-  # 2. El bloque del bot estable
-    try:
-        # Primero limpiamos cualquier conexión previa
-        bot.remove_webhook()
-        print("✅ Conexión con Telegram establecida.")
-        
-        # Usamos los parámetros básicos que aceptan todas las versiones
-        bot.infinity_polling(timeout=60, long_polling_timeout=30)
-        
-    except Exception as e:
-        print(f"❌ ERROR: {e}")
-
-
+    # 2. Bucle infinito para que el bot NUNCA muera definitivamente
+    while True:
+        try:
+            print("🚀 Intentando conectar con Telegram...")
+            
+            # Limpiamos conexiones colgadas (evita el Error 409)
+            bot.remove_webhook()
+            time.sleep(1) 
+            
+            print("✅ Conexión establecida. Bot escuchando...")
+            
+            # Usamos infinity_polling que es el más estable para reconexiones
+            bot.infinity_polling(timeout=60, long_polling_timeout=30)
+            
+        except Exception as e:
+            error_msg = str(e)
+            print(f"❌ ERROR DETECTADO: {error_msg}")
+            
+            # Si es el error 409 (Conflicto), esperamos más para que la sesión vieja muera
+            if "409" in error_msg:
+                print("⚠️ Conflicto de sesiones. Esperando 15 segundos...")
+                time.sleep(15)
+            else:
+                print("🔄 Reiniciando bot en 5 segundos...")
+                time.sleep(5)
+            
+            continue # Vuelve al inicio del 'while True'
 
 
 
