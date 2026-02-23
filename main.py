@@ -176,7 +176,46 @@ def menu_principal_profesional(chat_id):
         reply_markup=markup,
         parse_mode="Markdown"
     )
+# ======================================================
+# FUNCIONES DE IA (Deben estar arriba del callback)
+# ======================================================
 
+def pedir_foto(message):
+    # Ahora Python ya sabe qué es 'pedir_foto'
+    msg = bot.send_message(message.chat.id, "📸 Adjuntá la foto del cultivo:")
+    bot.register_next_step_handler(msg, analizar_foto)
+
+def analizar_foto(message):
+    try:
+        if not message.photo:
+            return bot.send_message(message.chat.id, "❌ No recibí ninguna imagen.")
+
+        bot.send_message(message.chat.id, "🧠 *LABORATORIO IA:* Analizando...")
+
+        file_info = bot.get_file(message.photo[-1].file_id)
+        downloaded_file = bot.download_file(file_info.file_path)
+
+        # Formato para Gemini
+        image_data = {"mime_type": "image/jpeg", "data": downloaded_file}
+        prompt = "Analiza esta imagen como agrónomo experto. Sé breve."
+
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        response = model.generate_content([prompt, image_data])
+
+        if response.text:
+            bot.send_message(message.chat.id, f"🔬 *REPORTE IA:*\n{response.text}", parse_mode="Markdown")
+        else:
+            bot.send_message(message.chat.id, "⚠️ No pude procesar la imagen.")
+
+        # Limpieza vital para Render
+        del downloaded_file
+        import gc
+        gc.collect()
+
+    except Exception as e:
+        bot.send_message(message.chat.id, f"🚫 *ERROR IA:* `{str(e)}`", parse_mode="Markdown")
+    
+    menu_principal_profesional(message.chat.id)
 # ======================================================
 # CALLBACKS
 # ======================================================
@@ -364,50 +403,6 @@ def guardar_cultivo(message):
     actualizar_memoria(chat_id, "lotes", lotes)
     bot.send_message(chat_id, f"✅ Cultivo '{message.text}' asignado a '{lote}'.")
     menu_principal_profesional(chat_id)
-def analizar_foto(message):
-    try:
-        if not message.photo:
-            return bot.send_message(message.chat.id, "❌ No recibí ninguna imagen.")
-
-        bot.send_message(message.chat.id, "🧠 *LABORATORIO IA:* Analizando muestra...")
-
-        # 1. Descarga de la foto
-        file_info = bot.get_file(message.photo[-1].file_id)
-        downloaded_file = bot.download_file(file_info.file_path)
-
-        # 2. Formato EXACTO que pide Google para bytes
-        # Cambiamos el diccionario por la estructura de lista de contenidos
-        image_data = {
-            "mime_type": "image/jpeg",
-            "data": downloaded_file
-        }
-        
-        prompt = "Analiza esta imagen como un agrónomo experto y detecta plagas o enfermedades. Sé breve y directo en español."
-
-        # 3. Intento de generación
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        
-        # IMPORTANTE: Aquí pasamos la imagen como parte de una lista
-        response = model.generate_content([prompt, image_data])
-
-        # 4. Verificación de respuesta
-        if response and response.text:
-            bot.send_message(message.chat.id, f"🔬 *REPORTE IA:*\n{response.text}", parse_mode="Markdown")
-        else:
-            bot.send_message(message.chat.id, "⚠️ La IA no pudo interpretar la imagen. Intentá con una foto más clara.")
-
-        # Limpieza (Vital para que Render no te apague)
-        del downloaded_file
-        del image_data
-        import gc
-        gc.collect()
-
-    except Exception as e:
-        error_detallado = str(e)
-        print(f"Error real de la IA: {error_detallado}") # Esto lo verás en el log de Render
-        bot.send_message(message.chat.id, "⚠️ El motor IA tuvo un problema al procesar. Reintentando...")
-        # Si el error persiste, el log de Render te dirá si es la API Key o RAM.
-    
     menu_principal_profesional(message.chat.id)    # ---------------- ANOTAR Y BITÁCORA ----------------
 def anotar_novedad(message):
     msg = bot.send_message(message.chat.id, "✍️ Describí la novedad:")
@@ -592,6 +587,7 @@ if __name__ == "__main__":
                 time.sleep(5)
             
             continue # Vuelve al inicio del 'while True'
+
 
 
 
