@@ -179,56 +179,63 @@ def menu_principal_profesional(chat_id):
 # ======================================================
 # FUNCIONES DE IA (Deben estar arriba del callback)
 # ======================================================
-
 def pedir_foto(message):
-    # Ahora Python ya sabe qué es 'pedir_foto'
-    msg = bot.send_message(message.chat.id, "📸 Adjuntá la foto del cultivo:")
+    msg = bot.send_message(message.chat.id, "📸 Enviá la foto del cultivo:")
     bot.register_next_step_handler(msg, analizar_foto)
+
 
 def analizar_foto(message):
     try:
         if not message.photo:
             return bot.send_message(message.chat.id, "❌ No recibí ninguna imagen.")
 
-        # Mensaje de estado para que el usuario no se desespere
-        status_msg = bot.send_message(message.chat.id, "🧠 *LABORATORIO IA:* Analizando...")
+        status = bot.send_message(
+            message.chat.id,
+            "🧠 *Analizando imagen...*",
+            parse_mode="Markdown"
+        )
 
         file_info = bot.get_file(message.photo[-1].file_id)
         downloaded_file = bot.download_file(file_info.file_path)
 
-        # Formato blindado para Gemini
-        image_data = {
+        image_part = {
             "mime_type": "image/jpeg",
             "data": downloaded_file
         }
-        
-        prompt = "Analiza esta imagen como agrónomo experto. Detecta plagas o enfermedades. Sé muy breve y directo."
 
-        # Usamos el nombre del modelo que rara vez falla
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        
-        # Generar contenido pasándole la lista directamente
-        response = model.generate_content([prompt, image_data])
+        prompt = """
+        Actúa como ingeniero agrónomo experto.
+        Analiza la imagen y detecta:
+        - Plagas
+        - Enfermedades
+        - Estrés hídrico
+        Sé breve y profesional.
+        """
+
+        model = genai.GenerativeModel(MODEL_NAME)
+        response = model.generate_content([prompt, image_part])
+
+        bot.delete_message(message.chat.id, status.message_id)
 
         if response and response.text:
-            # Editamos el mensaje anterior para que quede más limpio
-            bot.delete_message(message.chat.id, status_msg.message_id)
-            bot.send_message(message.chat.id, f"🔬 *REPORTE IA:*\n{response.text}", parse_mode="Markdown")
+            bot.send_message(
+                message.chat.id,
+                f"🔬 *REPORTE IA*\n\n{response.text}",
+                parse_mode="Markdown"
+            )
         else:
-            bot.send_message(message.chat.id, "⚠️ La IA no pudo generar una respuesta clara.")
+            bot.send_message(message.chat.id, "⚠️ No se pudo generar respuesta.")
 
-        # Limpieza vital para Render
         del downloaded_file
-        import gc
-        gc.collect()
 
     except Exception as e:
-        # Esto te dirá el error real en Telegram si vuelve a fallar
-        error_str = str(e)
-        print(f"Error IA: {error_str}")
-        bot.send_message(message.chat.id, f"🚫 *ERROR TÉCNICO:* `{error_str[:100]}`", parse_mode="Markdown")
-    
-    menu_principal_profesional(message.chat.id)
+        error_msg = str(e)
+        print(f"❌ Error IA: {error_msg}")
+        bot.send_message(
+            message.chat.id,
+            f"🚫 Error técnico:\n`{error_msg[:200]}`",
+            parse_mode="Markdown"
+        )
 # ======================================================
 # CALLBACKS
 # ======================================================
@@ -600,6 +607,7 @@ if __name__ == "__main__":
                 time.sleep(5)
             
             continue # Vuelve al inicio del 'while True'
+
 
 
 
