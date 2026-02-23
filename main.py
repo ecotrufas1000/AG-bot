@@ -39,7 +39,7 @@ ADMIN_ID = "6906652917"
 
 # 2. CONFIGURACIÓN DE GEMINI (Lo que ya hicimos)
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-MODEL-NAME = 'gemini-2.0-flash'
+MODEL_NAME = 'gemini-2.0-flash'
 
 # 3. AQUÍ PONÉ EL BLOQUE DE SUPABASE (El que me pasaste)
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -607,6 +607,7 @@ if __name__ == "__main__":
                 time.sleep(5)
             
             continue # Vuelve al inicio del 'while True'
+
 
 
 
