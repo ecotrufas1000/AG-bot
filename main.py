@@ -364,6 +364,13 @@ def guardar_cultivo(message):
     actualizar_memoria(chat_id, "lotes", lotes)
     bot.send_message(chat_id, f"✅ Cultivo '{message.text}' asignado a '{lote}'.")
     menu_principal_profesional(chat_id)
+# --- 1. DEFINICIÓN DE PEDIR FOTO ---
+def pedir_foto(message):
+    # Esta función debe estar definida ANTES de usarse en los botones
+    msg = bot.send_message(message.chat.id, "📸 Adjuntá la foto del cultivo:")
+    bot.register_next_step_handler(msg, analizar_foto)
+
+# --- 2. DEFINICIÓN DE ANALIZAR FOTO ---
 def analizar_foto(message):
     try:
         if not message.photo:
@@ -371,12 +378,10 @@ def analizar_foto(message):
 
         bot.send_message(message.chat.id, "🧠 *LABORATORIO IA:* Analizando muestra...")
 
-        # 1. Descarga de la foto en memoria
+        # Descarga de la foto
         file_info = bot.get_file(message.photo[-1].file_id)
         downloaded_file = bot.download_file(file_info.file_path)
 
-        # 2. Preparamos el formato para Gemini
-        # Usamos un diccionario con 'mime_type' y 'data'
         image_parts = {
             "mime_type": "image/jpeg",
             "data": downloaded_file
@@ -384,45 +389,35 @@ def analizar_foto(message):
         
         prompt = "Analiza esta imagen como un agrónomo experto y detecta plagas o enfermedades. Sé breve y directo."
 
-        # 3. Proceso con Gemini
         response = None
         try:
             model = genai.GenerativeModel('gemini-1.5-flash')
-            # Enviamos el prompt y la imagen
             response = model.generate_content([prompt, image_parts])
         except Exception as e1:
             if "404" in str(e1):
-                print("Reintentando con prefijo models/...")
                 model = genai.GenerativeModel('models/gemini-1.5-flash')
                 response = model.generate_content([prompt, image_parts])
             else:
                 raise e1
 
-        # 4. Enviamos respuesta al usuario
         if response and response.text:
             bot.send_message(message.chat.id, f"🔬 *REPORTE IA:*\n{response.text}", parse_mode="Markdown")
         else:
-            bot.send_message(message.chat.id, "⚠️ No se pudo generar un análisis. Intentá con otra foto.")
+            bot.send_message(message.chat.id, "⚠️ No se pudo generar un análisis.")
 
-        # --- LIMPIEZA DE MEMORIA ---
-        # Borramos las variables pesadas para liberar RAM en Render
+        # Limpieza de memoria para Render
         del downloaded_file
         del image_parts
-        if response:
-            del response
+        if response: del response
         import gc
-        gc.collect() 
+        gc.collect()
 
     except Exception as e:
-        error_msg = str(e)
-        print(f"Error en IA: {error_msg}")
-        bot.send_message(message.chat.id, "⚠️ El motor IA tuvo un problema al procesar la imagen.")
-        # Asegurate de que la función reportar_error_al_admin exista arriba
-        reportar_error_al_admin(error_msg, "IA FOTO FINAL")
+        print(f"Error en IA: {e}")
+        bot.send_message(message.chat.id, "⚠️ El motor IA tuvo un problema.")
     
-    # Volvemos al menú después de terminar
-    menu_principal_profesional(message.chat.id)
-    
+    # Volver al menú
+    menu_principal_profesional(message.chat.id)    
     menu_principal_profesional(message.chat.id)
     # ---------------- ANOTAR Y BITÁCORA ----------------
 def anotar_novedad(message):
@@ -608,6 +603,7 @@ if __name__ == "__main__":
                 time.sleep(5)
             
             continue # Vuelve al inicio del 'while True'
+
 
 
 
