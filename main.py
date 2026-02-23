@@ -368,10 +368,6 @@ def guardar_cultivo(message):
 # ======================================================
 # FOTO IA (VISIÓN)
 # ======================================================
-def pedir_foto(message):
-    msg = bot.send_message(message.chat.id, "📸 Adjuntá la foto del cultivo:")
-    bot.register_next_step_handler(msg, analizar_foto)
-
 def analizar_foto(message):
     try:
         if not message.photo:
@@ -379,39 +375,46 @@ def analizar_foto(message):
 
         bot.send_message(message.chat.id, "🧠 *LABORATORIO IA:* Analizando muestra...")
 
-        # Descarga de la foto
+        # 1. Descarga de la foto
         file_info = bot.get_file(message.photo[-1].file_id)
         downloaded_file = bot.download_file(file_info.file_path)
 
-        # Preparamos la imagen
+        # 2. Preparamos la imagen
         image_parts = [{"mime_type": "image/jpeg", "data": downloaded_file}]
         prompt = "Analiza esta imagen como un agrónomo experto y detecta plagas o enfermedades. Sé breve."
 
-        # INTENTO 1: Nombre estándar
+        # 3. Proceso con Gemini
         try:
             model = genai.GenerativeModel('gemini-1.5-flash')
             response = model.generate_content([prompt, image_parts[0]])
         except Exception as e1:
             if "404" in str(e1):
-                # INTENTO 2: Nombre con prefijo (si el 1 falló)
-                print("Reintentando con prefijo models/...")
                 model = genai.GenerativeModel('models/gemini-1.5-flash')
                 response = model.generate_content([prompt, image_parts[0]])
             else:
                 raise e1
 
+        # 4. Enviamos respuesta
         if response.text:
             bot.send_message(message.chat.id, f"🔬 *REPORTE IA:*\n{response.text}", parse_mode="Markdown")
         else:
             bot.send_message(message.chat.id, "⚠️ No se pudo generar un análisis.")
 
+        # --- LIMPIEZA DE MEMORIA (Agregá esto aquí abajo) ---
+        del downloaded_file
+        del image_parts
+        import gc
+        gc.collect() # Forzamos a Python a limpiar la RAM "muerta"
+        # ----------------------------------------------------
+
     except Exception as e:
         error_msg = str(e)
+        print(f"Error en IA: {error_msg}")
         bot.send_message(message.chat.id, "⚠️ El motor IA está fuera de línea momentáneamente.")
-        # Esto te llegará a vos para que veamos el nombre real del error
         reportar_error_al_admin(error_msg, "IA FOTO FINAL")
     
-    menu_principal_profesional(message.chat.id)# ---------------- ANOTAR Y BITÁCORA ----------------
+    menu_principal_profesional(message.chat.id)
+    # ---------------- ANOTAR Y BITÁCORA ----------------
 def anotar_novedad(message):
     msg = bot.send_message(message.chat.id, "✍️ Describí la novedad:")
     bot.register_next_step_handler(msg, guardar_novedad_paso)
@@ -578,6 +581,7 @@ if __name__ == "__main__":
         
     except Exception as e:
         print(f"❌ ERROR: {e}")
+
 
 
 
